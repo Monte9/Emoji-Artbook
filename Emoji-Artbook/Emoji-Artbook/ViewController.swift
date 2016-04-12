@@ -58,6 +58,23 @@ class ViewController: UIViewController {
         }
     }
     
+    @IBAction func onSmileyPanGesture(panGestureRecognizer: UIPanGestureRecognizer) {
+        let translation = panGestureRecognizer.translationInView(newlyCreatedFace)
+
+        if panGestureRecognizer.state == UIGestureRecognizerState.Began {
+            let imageView = panGestureRecognizer.view as! UIImageView
+            newlyCreatedFace = UIImageView(image: imageView.image)
+            newlyCreatedFace.frame = CGRectMake(0, 0, 60, 60)
+            view.addSubview(newlyCreatedFace)
+            newlyCreatedFace.center = imageView.center
+            newlyCreatedFace.center.y += trayView.frame.origin.y
+            faceOriginalCenter = newlyCreatedFace.center
+            print("New smiley created")
+        } else if panGestureRecognizer.state == UIGestureRecognizerState.Changed {
+            newlyCreatedFace.center = CGPoint(x: faceOriginalCenter.x + translation.x, y: faceOriginalCenter.y + translation.y - 90)
+        }
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
