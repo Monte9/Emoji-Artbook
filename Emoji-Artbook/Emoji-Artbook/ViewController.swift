@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UIGestureRecognizerDelegate {
 
     @IBOutlet weak var trayView: UIView!
     
@@ -18,6 +18,9 @@ class ViewController: UIViewController {
     
     var newlyCreatedFace: UIImageView!
     var faceOriginalCenter: CGPoint!
+    var newlyCreatedFaceOriginalCenter: CGPoint!
+    
+    var faceScale: CGFloat! = CGFloat(1.0)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -69,10 +72,79 @@ class ViewController: UIViewController {
             newlyCreatedFace.center = imageView.center
             newlyCreatedFace.center.y += trayView.frame.origin.y
             faceOriginalCenter = newlyCreatedFace.center
+            
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                self.newlyCreatedFace.transform = CGAffineTransformMakeScale(self.faceScale, self.faceScale)
+            })
+            
             print("New smiley created")
         } else if panGestureRecognizer.state == UIGestureRecognizerState.Changed {
             newlyCreatedFace.center = CGPoint(x: faceOriginalCenter.x + translation.x, y: faceOriginalCenter.y + translation.y - 90)
+        } else if panGestureRecognizer.state == UIGestureRecognizerState.Ended {
+            print("panning ended")
+            
+            self.newlyCreatedFace.userInteractionEnabled = true
+            var newPanGestureRecognizer = UIPanGestureRecognizer(target: self, action: "onCustomPan:")
+            var pinchGestureRecognizer = UIPinchGestureRecognizer(target: self, action: "onCustomPinch:")
+            var rotateGestureRecognizer = UIRotationGestureRecognizer(target: self, action: "onCustomRotate:")
+            
+            self.newlyCreatedFace.addGestureRecognizer(newPanGestureRecognizer)
+            pinchGestureRecognizer.delegate = self
+            self.newlyCreatedFace.addGestureRecognizer(pinchGestureRecognizer)
+            self.newlyCreatedFace.addGestureRecognizer(rotateGestureRecognizer)
+            
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                self.newlyCreatedFace.transform = CGAffineTransformMakeScale(self.faceScale, self.faceScale)
+            })
         }
+    }
+    
+    func onCustomPan(panGestureRecognizer: UIPanGestureRecognizer) {
+        
+        // Absolute (x,y) coordinates in parent view
+        var point = panGestureRecognizer.locationInView(view)
+        
+        // Relative change in (x,y) coordinates from where gesture began.
+        var translation = panGestureRecognizer.translationInView(view)
+        var velocity = panGestureRecognizer.velocityInView(view)
+        
+        var imageView = panGestureRecognizer.view as! UIImageView
+        
+        if panGestureRecognizer.state == UIGestureRecognizerState.Began {
+            newlyCreatedFaceOriginalCenter = imageView.center
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                imageView.transform = CGAffineTransformMakeScale(self.faceScale + 1.4, self.faceScale + 1.4)
+            })
+            
+        } else if panGestureRecognizer.state == UIGestureRecognizerState.Changed {
+            imageView.center = CGPoint(x: translation.x + newlyCreatedFaceOriginalCenter.x, y: translation.y + newlyCreatedFaceOriginalCenter.y)
+        } else if panGestureRecognizer.state == UIGestureRecognizerState.Ended {
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                imageView.transform = CGAffineTransformMakeScale(self.faceScale, self.faceScale)
+            })
+        }
+    }
+    
+    func onCustomPinch(pinchGestureRecognizer: UIPinchGestureRecognizer) {
+        print("Pinch!")
+        faceScale = pinchGestureRecognizer.scale
+        var velocity = pinchGestureRecognizer.velocity
+        
+        var imageView = pinchGestureRecognizer.view as! UIImageView
+        imageView.transform = CGAffineTransformMakeScale(faceScale, faceScale)
+    }
+    
+    func onCustomRotate(rotateGestureRecognizer: UIRotationGestureRecognizer) {
+        print("rotate?")
+        var rotation = rotateGestureRecognizer.rotation
+        var velocity = rotateGestureRecognizer.velocity
+        
+        var imageView = rotateGestureRecognizer.view as! UIImageView
+        imageView.transform = CGAffineTransformRotate(imageView.transform, CGFloat(Double(rotation) * M_PI / 180))
+    }
+    
+    func gestureRecognizer(gestureRecognizer: UIGestureRecognizer!, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer!) -> Bool {
+        return true
     }
     
     override func didReceiveMemoryWarning() {
